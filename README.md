@@ -15,12 +15,13 @@ model. Delete both and build.
 ## Using this as a template
 
 This repository is a GitHub template. "Use this template" gives you a copy;
-one script then renames it:
+clone it and one script renames it:
 
 ```sh
-scripts/rename-project.sh <name> [domain]     # e.g. topia topia.game
-bun install                                   # workspace names changed
-git diff                                      # every change is mechanical
+git clone <new-repo-url> myproject && cd myproject
+scripts/rename-project.sh myproject myproject.com   # <name> [domain]
+bun install                                         # workspace names changed
+git diff                                            # every change is mechanical
 ```
 
 `<name>` must be lowercase letters and digits — it becomes a Prometheus metric
