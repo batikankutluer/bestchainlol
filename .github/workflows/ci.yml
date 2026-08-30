@@ -134,7 +134,15 @@ jobs:
           NGINX_BASIC_AUTH_PASSWORD: ci
         run: |
           docker build -f infra/nginx/Dockerfile --target dev -t bestchain-nginx-ci .
+          # `nginx -t` resolves every proxy_pass hostname up front, and this
+          # container runs alone with no compose network behind it — real
+          # `docker compose up` gives these names a DNS entry, this command
+          # doesn't. --add-host stands in for that network, pointed at
+          # nowhere in particular: nginx -t only needs the name to resolve,
+          # it never opens a connection.
           docker run --rm \
+            --add-host=backend:127.0.0.1 --add-host=frontend:127.0.0.1 --add-host=admin:127.0.0.1 \
+            --add-host=grafana:127.0.0.1 --add-host=backrest:127.0.0.1 --add-host=prometheus:127.0.0.1 \
             -e APP_DOMAIN -e ADMIN_DOMAIN -e NGINX_BASIC_AUTH_USER -e NGINX_BASIC_AUTH_PASSWORD \
             -e UPSTREAM_BACKEND -e UPSTREAM_FRONTEND -e UPSTREAM_ADMIN \
             -e UPSTREAM_GRAFANA -e UPSTREAM_BACKREST -e UPSTREAM_PROMETHEUS \
