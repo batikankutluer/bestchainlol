@@ -1,0 +1,4 @@
+- targets: ['backend:3000']
+  labels:
+    env: prod
+    service: backend

@@ -1,0 +1,46 @@
+# -----------------------------------------------------------------------------
+# Targets that differ between dev and prod (the backend runs on the host in dev,
+# in a container in prod) come from /etc/prometheus/targets, which compose mounts
+# from targets/dev or targets/prod. Everything else is identical in both.
+# -----------------------------------------------------------------------------
+global:
+  scrape_interval: 15s
+  scrape_timeout: 10s
+  evaluation_interval: 15s
+  external_labels:
+    project: bestchain
+
+rule_files:
+  - /etc/prometheus/rules/*.yml
+
+scrape_configs:
+  - job_name: prometheus
+    metrics_path: /prometheus/metrics
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: backend
+    file_sd_configs:
+      - files: ['/etc/prometheus/targets/backend.yml']
+
+  - job_name: postgres
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+
+  # Per-environment: there is no node-exporter in development, and a job with a
+  # permanently-down target trains people to ignore red targets.
+  - job_name: node
+    file_sd_configs:
+      - files: ['/etc/prometheus/targets/node.yml']
+
+  - job_name: nginx
+    static_configs:
+      - targets: ['nginx-exporter:9113']
+
+  - job_name: grafana
+    # GF_SERVER_SERVE_FROM_SUB_PATH puts every route behind /grafana, /metrics
+    # included. Scraping the bare path gets a redirect to the public URL, which
+    # Prometheus then cannot reach from inside the observability network.
+    metrics_path: /grafana/metrics
+    static_configs:
+      - targets: ['grafana:3000']

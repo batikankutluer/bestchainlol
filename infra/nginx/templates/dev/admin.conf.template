@@ -1,0 +1,66 @@
+# ---------------------------------------------------------------------------
+# Admin subdomain — development.
+# Same path layout as production so /grafana, /backrest and /developer are never
+# "works on prod only" surprises.
+# ---------------------------------------------------------------------------
+server {
+  # default_server, and `localhost` by name: in development the bare
+  # http://localhost:PORT is the operations panel, because that is the URL you
+  # type when you want /backrest, /grafana or /developer. The public app keeps
+  # its own hostname. Production has no such shortcut — cloudflared maps a real
+  # subdomain to each and the split is by Host alone.
+  listen 80 default_server;
+  server_name ${ADMIN_DOMAIN} localhost;
+
+  include /etc/nginx/snippets/security-headers.conf;
+  include /etc/nginx/snippets/admin-noindex.conf;
+
+  location /api/ {
+    include /etc/nginx/snippets/proxy.conf;
+    proxy_pass http://${UPSTREAM_BACKEND};
+  }
+
+  location = /health {
+    include /etc/nginx/snippets/proxy.conf;
+    proxy_pass http://${UPSTREAM_BACKEND}/health;
+  }
+
+  # No trailing slash on proxy_pass: that keeps the /grafana prefix on the
+  # forwarded URI, which is what GF_SERVER_SERVE_FROM_SUB_PATH expects. Strip
+  # it and Grafana redirects straight back to /grafana/ — an infinite loop.
+  # The websocket upgrade headers in proxy.conf also cover Grafana Live, so no
+  # separate location is needed for it.
+  location /grafana/ {
+    include /etc/nginx/snippets/proxy.conf;
+    proxy_pass http://${UPSTREAM_GRAFANA};
+  }
+
+  # Backrest brings its own login, so there is no basic-auth layer here — two
+  # password prompts for one tool is friction without a second boundary.
+  #
+  # The gap this leaves is the first run: Backrest is unauthenticated until an
+  # account is created. Create it immediately, and keep Cloudflare Access in
+  # front of this domain, which is the real perimeter either way.
+  location /backrest/ {
+    include /etc/nginx/snippets/proxy.conf;
+    proxy_pass http://${UPSTREAM_BACKREST}/;
+
+    # Restores stream whole snapshots through here.
+    client_max_body_size 0;
+    proxy_request_buffering off;
+    proxy_read_timeout 1h;
+    proxy_send_timeout 1h;
+  }
+
+  location /prometheus/ {
+    auth_basic "ops";
+    auth_basic_user_file /etc/nginx/.htpasswd;
+    include /etc/nginx/snippets/proxy.conf;
+    proxy_pass http://${UPSTREAM_PROMETHEUS}/prometheus/;
+  }
+
+  location / {
+    include /etc/nginx/snippets/proxy.conf;
+    proxy_pass http://${UPSTREAM_ADMIN};
+  }
+}

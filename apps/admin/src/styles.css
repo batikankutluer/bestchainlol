@@ -1,0 +1,372 @@
+/* Dark-only operations surface. Palette values and surfaces come from the
+   validated reference instance; the chart series color is a single slot
+   because every chart on /developer carries exactly one series. */
+:root {
+  color-scheme: dark;
+
+  --page: #0d0d0d;
+  --surface-1: #1a1a19;
+  --text-primary: #ffffff;
+  --text-secondary: #c3c2b7;
+  --muted: #898781;
+  --grid: #2c2c2a;
+  --axis: #383835;
+  --border: rgba(255, 255, 255, 0.1);
+
+  --series-1: #3987e5;
+  --good: #0ca30c;
+  --warning: #fab219;
+  --critical: #d03b3b;
+
+  --font-sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--page);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+code, .num { font-family: var(--font-mono); }
+.num { font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+.small { font-size: 0.8125rem; }
+
+/* ---------- shell ---------- */
+.shell { min-height: 100vh; }
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 0 1.5rem;
+  height: 3.5rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-1);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.nav__brand { font-weight: 600; letter-spacing: -0.02em; margin-right: 0.5rem; }
+
+.nav a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  padding: 0.35rem 0;
+  border-bottom: 2px solid transparent;
+}
+.nav a:hover { color: var(--text-primary); }
+.nav a.active { color: var(--text-primary); border-bottom-color: var(--series-1); }
+
+.nav__signout {
+  margin-left: auto;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 0.375rem;
+  color: var(--text-secondary);
+  padding: 0.35rem 0.75rem;
+  cursor: pointer;
+  font: inherit;
+}
+.nav__signout:hover { color: var(--text-primary); border-color: var(--axis); }
+
+.page {
+  max-width: 78rem;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+  display: grid;
+  gap: 2.5rem;
+}
+
+.page__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+.page__head h1 { margin: 0 0 0.25rem; font-size: 1.5rem; letter-spacing: -0.02em; }
+.page__head p { margin: 0; }
+
+h2 {
+  margin: 0 0 1rem;
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+/* ---------- controls ---------- */
+.btn {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 0.375rem;
+  color: var(--text-primary);
+  padding: 0.45rem 0.9rem;
+  cursor: pointer;
+  font: inherit;
+}
+.btn:hover { border-color: var(--axis); }
+.btn--primary { background: var(--series-1); border-color: var(--series-1); color: #fff; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+.toolbar h2 { margin: 0; }
+.toolbar__controls { display: flex; align-items: center; gap: 1rem; }
+
+.segmented { display: inline-flex; border: 1px solid var(--border); border-radius: 0.375rem; overflow: hidden; }
+.segmented button {
+  background: none;
+  border: none;
+  border-right: 1px solid var(--border);
+  color: var(--text-secondary);
+  padding: 0.35rem 0.75rem;
+  cursor: pointer;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+}
+.segmented button:last-child { border-right: none; }
+.segmented button:hover { color: var(--text-primary); }
+.segmented button.is-active { background: var(--series-1); color: #fff; }
+
+.toggle { display: inline-flex; align-items: center; gap: 0.4rem; color: var(--text-secondary); cursor: pointer; }
+
+/* ---------- banners ---------- */
+.banner {
+  margin: 0 0 1rem;
+  padding: 0.6rem 0.85rem;
+  border-radius: 0.375rem;
+  border-left: 3px solid var(--muted);
+  background: var(--surface-1);
+  color: var(--text-secondary);
+}
+.banner--warning { border-left-color: var(--warning); }
+.banner--critical { border-left-color: var(--critical); }
+
+/* ---------- stat tiles ---------- */
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.tile { background: var(--surface-1); padding: 1rem 1.1rem; display: grid; gap: 0.2rem; }
+.tile__label { font-size: 0.6875rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.tile__value { font-size: 1.5rem; letter-spacing: -0.02em; font-weight: 600; }
+.tile__sub { font-size: 0.75rem; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* The tone tints the sub-label only; the label text always states the condition,
+   so the state is never carried by color alone. */
+.tile--good .tile__sub { color: var(--good); }
+.tile--warning .tile__sub { color: var(--warning); }
+.tile--critical .tile__sub { color: var(--critical); }
+
+/* ---------- charts ---------- */
+.charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr)); gap: 1rem; }
+
+.chart {
+  margin: 0;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
+
+.chart figcaption { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-bottom: 0.5rem; }
+.chart__title { font-size: 0.8125rem; color: var(--text-secondary); }
+.chart__latest { font-size: 1rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.chart__empty { color: var(--muted); font-size: 0.8125rem; margin: 0; }
+
+.chart__plot { position: relative; }
+.chart svg { width: 100%; height: 140px; display: block; overflow: visible; touch-action: none; }
+
+.chart__grid { stroke: var(--grid); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.chart__line { fill: none; stroke: var(--series-1); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.chart__area { fill: var(--series-1); opacity: 0.12; }
+.chart__crosshair { stroke: var(--axis); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.chart__marker { fill: var(--series-1); stroke: var(--surface-1); stroke-width: 2; vector-effect: non-scaling-stroke; }
+.chart__tick { fill: var(--muted); font-size: 10px; font-family: var(--font-mono); }
+
+.chart__tooltip {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  background: var(--page);
+  border: 1px solid var(--axis);
+  border-radius: 0.3rem;
+  padding: 0.3rem 0.5rem;
+  display: grid;
+  gap: 0.1rem;
+  pointer-events: none;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.chart__tooltip strong { font-size: 0.8125rem; }
+.chart__tooltip span { font-size: 0.6875rem; color: var(--muted); }
+
+/* ---------- tables ---------- */
+.table-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--surface-1);
+}
+.table-scroll--short { max-height: 12rem; overflow-y: auto; }
+
+table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
+thead th {
+  text-align: left;
+  font-weight: 500;
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 0.6rem 0.85rem;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  background: var(--surface-1);
+}
+tbody td { padding: 0.55rem 0.85rem; border-bottom: 1px solid rgba(255, 255, 255, 0.04); }
+tbody tr:last-child td { border-bottom: none; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; font-family: var(--font-mono); }
+.query { color: var(--text-secondary); font-size: 0.75rem; display: block; max-width: 40rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---------- lists ---------- */
+.plain { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.4rem; color: var(--text-secondary); }
+
+.tools { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 0.5rem; overflow: hidden; }
+.tools a { display: grid; gap: 0.25rem; padding: 1rem 1.1rem; background: var(--surface-1); text-decoration: none; color: var(--text-primary); }
+.tools a:hover { background: #201f1e; }
+.tools span { font-size: 0.8125rem; }
+
+/* ---------- login ---------- */
+.login {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+}
+
+.login__card {
+  display: grid;
+  gap: 0.75rem;
+  width: min(24rem, 100%);
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 2rem;
+}
+
+.login h1 {
+  margin: 0;
+  font-size: 1.125rem;
+  letter-spacing: -0.02em;
+}
+
+.login form {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.login label {
+  font-size: 0.75rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.login input {
+  background: var(--page);
+  border: 1px solid var(--border);
+  border-radius: 0.375rem;
+  color: var(--text-primary);
+  padding: 0.55rem 0.7rem;
+  font: inherit;
+  font-family: var(--font-mono);
+}
+
+.login input:focus {
+  outline: 2px solid var(--series-1);
+  outline-offset: 1px;
+}
+
+.login p {
+  margin: 0;
+}
+
+/* Stage indicator. The number and the ✓ carry the state, not the colour. */
+.stages {
+  list-style: none;
+  margin: 0;
+  padding: 0.75rem 0;
+  display: flex;
+  gap: 1.25rem;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.stages li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+
+.stages li.is-active {
+  color: var(--text-primary);
+}
+.stages li.is-done {
+  color: var(--good);
+}
+
+.stages__mark {
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 50%;
+  border: 1px solid currentColor;
+  display: grid;
+  place-items: center;
+  font-size: 0.6875rem;
+  font-variant-numeric: tabular-nums;
+  flex: none;
+}
+
+.providers {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.providers .btn {
+  text-align: center;
+  text-decoration: none;
+}
+
+/* ---------- code snippet ---------- */
+.snippet {
+  margin: 0;
+  padding: 1rem 1.1rem;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.7;
+  color: var(--text-secondary);
+}

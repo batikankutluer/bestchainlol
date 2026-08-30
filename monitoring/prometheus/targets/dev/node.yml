@@ -1,0 +1,3 @@
+# Empty on purpose: development runs no node-exporter. Host metrics measured
+# inside Docker Desktop's VM would describe the VM, not the machine.
+[]

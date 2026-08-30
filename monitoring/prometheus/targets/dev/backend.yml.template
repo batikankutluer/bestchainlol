@@ -1,0 +1,7 @@
+# Rendered into the prometheus_targets volume by the `prometheus-targets`
+# service in docker-compose.yml. Prometheus does no environment expansion of
+# its own, so a hardcoded port here would silently disagree with BACKEND_PORT.
+- targets: ['host.docker.internal:__BACKEND_PORT__']
+  labels:
+    env: dev
+    service: backend

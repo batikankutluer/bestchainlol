@@ -1,0 +1,40 @@
+# deps
+node_modules/
+.pnp/
+.pnp.js
+
+# builds
+dist/
+build/
+*.tsbuildinfo
+apps/backend/generated/
+
+# env & secrets  (all secrets live in Doppler — never commit them)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+infra/cloudflared/credentials.json
+infra/nginx/.htpasswd
+
+# runtime data
+# Leading slash matters: an unanchored `backups/` also matches
+# apps/backend/src/backups/, which is source code.
+/data/
+/backups/
+/logs/
+# Dev bind mount holding the backup status file the /rustic page reads.
+/.local/
+*.log
+
+# tooling
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+coverage/
+.turbo/
+
+.deploy-backups/
+doppler.yaml

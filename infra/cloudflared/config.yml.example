@@ -1,0 +1,23 @@
+# Alternative to token mode: ingress rules in git. See README.md.
+tunnel: <TUNNEL-UUID>
+credentials-file: /etc/cloudflared/credentials.json
+
+# Metrics endpoint scraped by Prometheus when cloudflared joins the
+# observability network.
+metrics: 0.0.0.0:2000
+
+ingress:
+  - hostname: bestchain.lol
+    service: http://nginx:80
+    originRequest:
+      httpHostHeader: bestchain.lol
+      connectTimeout: 10s
+
+  - hostname: admin.bestchain.lol
+    service: http://nginx:80
+    originRequest:
+      httpHostHeader: admin.bestchain.lol
+      connectTimeout: 10s
+
+  # Required: anything not matched above is refused rather than forwarded.
+  - service: http_status:404

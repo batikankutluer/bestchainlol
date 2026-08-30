@@ -1,0 +1,32 @@
+// =============================================================================
+// Placeholder schema.
+// =============================================================================
+// One model, deliberately. It exists so the plumbing is demonstrably working
+// before you write anything real: migrations apply, the connection pool opens,
+// Prisma's own metrics reach /metrics, and the admin panel's /developer page
+// has a table to report on.
+//
+// Replace it with your own model and generate a fresh migration. There is
+// nothing here worth preserving.
+// =============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+  // Exposes Prisma's pool and query counters, which MetricsService merges into
+  // /metrics so connection-pool saturation shows up next to HTTP latency.
+  previewFeatures = ["metrics"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid()) @db.Uuid
+  email     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}

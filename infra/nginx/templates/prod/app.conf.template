@@ -1,0 +1,38 @@
+# ---------------------------------------------------------------------------
+# Public app — production. Static bundle baked into this image at /srv/app.
+# ---------------------------------------------------------------------------
+server {
+  listen 80;
+  server_name ${APP_DOMAIN};
+  root /srv/app;
+  index index.html;
+
+  include /etc/nginx/snippets/security-headers.conf;
+
+  location /api/ {
+    include /etc/nginx/snippets/proxy.conf;
+    proxy_pass http://${UPSTREAM_BACKEND};
+  }
+
+  location = /health {
+    include /etc/nginx/snippets/proxy.conf;
+    proxy_pass http://${UPSTREAM_BACKEND}/health;
+  }
+
+  # Vite writes content-hashed filenames, so these can be cached indefinitely.
+  location /assets/ {
+    expires 1y;
+    add_header Cache-Control "public, immutable";
+    try_files $uri =404;
+  }
+
+  # index.html must never be cached, or a deploy ships new assets behind an old
+  # document that does not reference them.
+  location = /index.html {
+    add_header Cache-Control "no-store, must-revalidate";
+  }
+
+  location / {
+    try_files $uri $uri/ /index.html;
+  }
+}

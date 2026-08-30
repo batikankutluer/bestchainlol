@@ -1,0 +1,7 @@
+node_modules
+dist
+build
+bun.lock
+bun.lockb
+monitoring/grafana/dashboards
+apps/backend/prisma/migrations

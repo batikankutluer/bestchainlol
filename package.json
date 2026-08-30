@@ -1,0 +1,36 @@
+{
+  "name": "bestchainlol",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "packageManager": "bun@1.2.21",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "bun run --filter '*' dev",
+    "dev:backend": "bun run --filter '@bestchain/backend' dev",
+    "dev:frontend": "bun run --filter '@bestchain/frontend' dev",
+    "dev:admin": "bun run --filter '@bestchain/admin' dev",
+    "build": "bun run --filter '*' build",
+    "lint": "bun run --filter '*' lint",
+    "typecheck": "bun run --filter '*' typecheck",
+    "test": "bun run --filter '*' test",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,yml,yaml,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,json,yml,yaml,md}\"",
+    "db:generate": "bun run --filter '@bestchain/backend' db:generate",
+    "db:migrate": "bun run --filter '@bestchain/backend' db:migrate",
+    "db:deploy": "bun run --filter '@bestchain/backend' db:deploy",
+    "db:studio": "bun run --filter '@bestchain/backend' db:studio",
+    "infra:up": "docker compose up -d --build",
+    "infra:down": "docker compose down",
+    "infra:logs": "docker compose logs -f",
+    "backup:dump": "docker compose exec backrest /usr/local/bin/dump-postgres.sh"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "prettier": "^3.3.3",
+    "typescript": "^5.6.3"
+  }
+}

@@ -1,0 +1,17 @@
+node_modules
+**/node_modules
+dist
+**/dist
+build
+**/build
+.git
+.github
+.env
+.env.*
+!.env.example
+data
+backups
+*.log
+coverage
+README.md
+docs

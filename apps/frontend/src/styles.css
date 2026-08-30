@@ -1,0 +1,139 @@
+/* Starter styles. Nothing here is load-bearing — replace freely. */
+:root {
+  color-scheme: dark;
+  --bg: #0d0d0d;
+  --surface: #1a1a19;
+  --fg: #ffffff;
+  --muted: #898781;
+  --line: rgba(255, 255, 255, 0.1);
+  --ok: #0ca30c;
+  --degraded: #fab219;
+  --down: #d03b3b;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--fg);
+  line-height: 1.5;
+}
+
+code {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 0.875em;
+  color: var(--fg);
+}
+
+.shell {
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: 5rem 1.5rem;
+  display: grid;
+  gap: 1.5rem;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(2rem, 6vw, 3rem);
+  letter-spacing: -0.03em;
+}
+
+h1 .dot {
+  color: var(--ok);
+}
+
+.tagline {
+  color: var(--muted);
+  margin: 0.5rem 0 1rem;
+}
+
+h2 {
+  margin: 0 0 1rem;
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.panel {
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  background: var(--surface);
+}
+
+.status {
+  margin: 0;
+  color: var(--muted);
+}
+.status--ok {
+  color: var(--ok);
+}
+.status--degraded {
+  color: var(--degraded);
+}
+.status--down {
+  color: var(--down);
+}
+
+.hint {
+  color: var(--muted);
+  font-size: 0.875rem;
+  margin: 0.5rem 0 0;
+}
+
+.checks,
+.next {
+  list-style: none;
+  margin: 1rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.checks li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.checks em,
+.next li {
+  color: var(--muted);
+  font-style: normal;
+}
+
+.checks em {
+  margin-left: 0.25rem;
+}
+
+/* Status is stated in the text beside these, never carried by colour alone. */
+.dot--ok,
+.dot--degraded,
+.dot--down {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  display: inline-block;
+  flex: none;
+}
+.dot--ok {
+  background: var(--ok);
+}
+.dot--degraded {
+  background: var(--degraded);
+}
+.dot--down {
+  background: var(--down);
+}
+
+.next li {
+  font-size: 0.875rem;
+}

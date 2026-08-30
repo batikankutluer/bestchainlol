@@ -1,0 +1,38 @@
+{
+  "name": "@bestchain/backend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "prisma generate && bun --watch src/main.ts",
+    "start": "prisma generate && bun src/main.ts",
+    "build": "prisma generate && tsc -p tsconfig.json --noEmit",
+    "typecheck": "prisma generate && tsc -p tsconfig.json --noEmit",
+    "lint": "tsc -p tsconfig.json --noEmit",
+    "test": "bun test",
+    "db:generate": "prisma generate",
+    "db:migrate": "bun scripts/with-dev-env.ts prisma migrate dev",
+    "db:deploy": "bun scripts/with-dev-env.ts prisma migrate deploy",
+    "db:studio": "bun scripts/with-dev-env.ts prisma studio",
+    "db:push": "bun scripts/with-dev-env.ts prisma db push"
+  },
+  "dependencies": {
+    "@bestchain/shared": "workspace:*",
+    "@nestjs/common": "^10.4.6",
+    "@nestjs/config": "^3.3.0",
+    "@nestjs/core": "^10.4.6",
+    "@nestjs/jwt": "^10.2.0",
+    "@nestjs/platform-express": "^10.4.6",
+    "@prisma/client": "^5.22.0",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.1",
+    "helmet": "^8.0.0",
+    "prom-client": "^15.1.3",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "prisma": "^5.22.0",
+    "typescript": "^5.6.3"
+  }
+}

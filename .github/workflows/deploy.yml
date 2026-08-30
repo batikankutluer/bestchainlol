@@ -1,0 +1,111 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      skip_backup:
+        description: 'Skip the pre-deploy backup (only when the last one is known good)'
+        type: boolean
+        default: false
+
+concurrency:
+  # Deploys are serialised and never cancelled mid-flight — a half-applied
+  # migration is worse than a queued deploy.
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Production
+    # Runs on the box itself, so the images never leave the machine and no SSH
+    # key or registry credential has to exist anywhere.
+    runs-on: self-hosted
+    environment: production
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Doppler CLI
+        uses: dopplerhq/cli-action@v3
+
+      - name: Verify Doppler access
+        env:
+          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN_PRD }}
+        run: doppler secrets --only-names --silent
+
+      - name: Dump the database before touching anything
+        if: ${{ !inputs.skip_backup }}
+        env:
+          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN_PRD }}
+        # A deploy that runs migrations without a fresh dump has no undo. This
+        # is deliberately independent of Backrest: the point is a file on this
+        # machine, right now, not a scheduled snapshot that may be hours old.
+        run: |
+          mkdir -p .deploy-backups
+          doppler run -- docker compose -f docker-compose.prod.yml exec -T postgres \
+            sh -c 'PGPASSWORD="$POSTGRES_PASSWORD" pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
+                   --format=custom --no-owner --no-privileges' \
+            > ".deploy-backups/pre-${{ github.sha }}.dump"
+          ls -lh ".deploy-backups/pre-${{ github.sha }}.dump"
+
+      - name: Build images
+        env:
+          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN_PRD }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          doppler run -- docker compose -f docker-compose.prod.yml build \
+            --build-arg BUILDKIT_INLINE_CACHE=1
+
+      - name: Roll out
+        env:
+          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN_PRD }}
+          IMAGE_TAG: ${{ github.sha }}
+        # The backend entrypoint runs `prisma migrate deploy` before it serves,
+        # so migrations are part of the rollout rather than a separate step that
+        # can be forgotten.
+        run: |
+          doppler run -- docker compose -f docker-compose.prod.yml up -d --remove-orphans
+
+      - name: Wait for health
+        env:
+          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN_PRD }}
+        run: |
+          set -e
+          for attempt in $(seq 1 30); do
+            if doppler run -- docker compose -f docker-compose.prod.yml \
+                 exec -T backend curl -fsS http://127.0.0.1:3000/health > /tmp/health.json; then
+              echo "healthy after ${attempt} attempt(s):"
+              cat /tmp/health.json
+              exit 0
+            fi
+            echo "not healthy yet (${attempt}/30)…"
+            sleep 5
+          done
+          echo "backend never became healthy" >&2
+          doppler run -- docker compose -f docker-compose.prod.yml logs --tail 200 backend >&2
+          exit 1
+
+      - name: Reload Prometheus rules
+        env:
+          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN_PRD }}
+        # --web.enable-lifecycle makes this a reload rather than a restart, so
+        # the TSDB stays hot and no scrape gap appears in the dashboards.
+        run: |
+          doppler run -- docker compose -f docker-compose.prod.yml \
+            exec -T prometheus wget -q --post-data='' -O - \
+            http://127.0.0.1:9090/prometheus/-/reload || echo "reload skipped"
+
+      - name: Prune dangling images
+        if: always()
+        run: docker image prune -f --filter "until=168h"
+
+      - name: Report failure state
+        if: failure()
+        env:
+          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN_PRD }}
+        run: |
+          doppler run -- docker compose -f docker-compose.prod.yml ps
+          doppler run -- docker compose -f docker-compose.prod.yml logs --tail 100

@@ -1,0 +1,18 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    // Vite does the building; tsc only ever type-checks here. Emitting would
+    // scatter .js and .d.ts files through the source tree.
+    "noEmit": true,
+    "types": ["vite/client", "node"],
+    "baseUrl": ".",
+    "paths": {
+      "@bestchain/shared": ["../../packages/shared/src/index.ts"],
+      "@bestchain/shared/*": ["../../packages/shared/src/*"]
+    }
+  },
+  // The shared package is consumed as source, so it belongs to this program.
+  "include": ["src", "vite.config.ts", "../../packages/shared/src"]
+}

@@ -1,0 +1,36 @@
+# ---------------------------------------------------------------------------
+# Public app — development.
+# The Vite dev server runs on the host (terminal 1), so nginx reaches it through
+# host.docker.internal. That is what lets the same URL that production serves
+# also serve hot-reloaded modules.
+# ---------------------------------------------------------------------------
+server {
+  listen 80;
+  # `localhost` belongs to the admin server in development; this one answers
+  # on its own hostname.
+  server_name ${APP_DOMAIN};
+
+  include /etc/nginx/snippets/security-headers.conf;
+
+  location /api/ {
+    include /etc/nginx/snippets/proxy.conf;
+    proxy_pass http://${UPSTREAM_BACKEND};
+  }
+
+  location = /health {
+    include /etc/nginx/snippets/proxy.conf;
+    proxy_pass http://${UPSTREAM_BACKEND}/health;
+  }
+
+  # Vite's HMR socket. Without the upgrade headers the page silently stops
+  # reloading and everyone blames the bundler.
+  location /@vite/client {
+    include /etc/nginx/snippets/proxy.conf;
+    proxy_pass http://${UPSTREAM_FRONTEND};
+  }
+
+  location / {
+    include /etc/nginx/snippets/proxy.conf;
+    proxy_pass http://${UPSTREAM_FRONTEND};
+  }
+}

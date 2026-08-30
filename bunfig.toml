@@ -1,0 +1,7 @@
+[install]
+# Workspace-wide hoisting so apps share a single lockfile.
+exact = false
+peer = true
+
+[install.lockfile]
+save = true

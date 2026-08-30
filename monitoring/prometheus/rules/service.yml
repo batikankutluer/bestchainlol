@@ -1,0 +1,42 @@
+groups:
+  - name: service
+    rules:
+      - alert: BackendDown
+        expr: up{job="backend"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: 'Backend is not being scraped'
+          description: 'Either the process is down or /metrics stopped responding.'
+
+      - alert: BackendHighErrorRate
+        expr: >
+          sum(rate(bestchain_http_requests_total{status=~"5.."}[5m])) /
+          clamp_min(sum(rate(bestchain_http_requests_total[5m])), 0.001) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: 'Over 5% of backend responses are 5xx'
+
+      - alert: BackendSlowRequests
+        expr: >
+          histogram_quantile(0.95,
+            sum by (le) (rate(bestchain_http_request_duration_seconds_bucket[5m]))) > 1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'p95 backend latency above 1s'
+
+      - alert: DiskFillingUp
+        expr: >
+          node_filesystem_avail_bytes{mountpoint="/",fstype!="tmpfs"} /
+          node_filesystem_size_bytes{mountpoint="/",fstype!="tmpfs"} < 0.15
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'Less than 15% root filesystem free'
+          description: 'Backups and WAL are the usual culprits.'

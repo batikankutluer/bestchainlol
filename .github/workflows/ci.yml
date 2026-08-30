@@ -1,0 +1,141 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  BUN_VERSION: '1.2.21'
+
+jobs:
+  verify:
+    name: Lint, typecheck & build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile --ignore-scripts
+
+      - name: Generate Prisma client
+        working-directory: apps/backend
+        run: bunx prisma generate
+
+      - name: Format check
+        run: bun run format:check
+
+      - name: Typecheck
+        run: bun run typecheck
+
+      - name: Build
+        # Bundle URLs are baked in at build time; CI only needs them to be valid,
+        # not real — the deploy job rebuilds with the Doppler values.
+        env:
+          API_URL: /api
+        run: bun run build
+
+  database:
+    name: Prisma migrations
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: bestchain
+          POSTGRES_PASSWORD: bestchain
+          POSTGRES_DB: bestchain_ci
+        options: >-
+          --health-cmd "pg_isready -U bestchain"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports: ['5432:5432']
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - run: bun install --frozen-lockfile --ignore-scripts
+
+      - name: Apply migrations to a clean database
+        working-directory: apps/backend
+        env:
+          DATABASE_URL: postgresql://bestchain:bestchain@localhost:5432/bestchain_ci?schema=public
+        run: bunx prisma migrate deploy
+
+      - name: Fail if the schema drifted from the migrations
+        working-directory: apps/backend
+        env:
+          DATABASE_URL: postgresql://bestchain:bestchain@localhost:5432/bestchain_ci?schema=public
+        # Catches the "edited schema.prisma but forgot to generate a migration"
+        # case before it reaches a server that has real rows in it.
+        run: bunx prisma migrate diff --from-schema-datamodel prisma/schema.prisma --to-schema-datasource prisma/schema.prisma --exit-code && echo "no drift"
+
+  infra:
+    name: Infrastructure
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate compose files
+        # Placeholder values only — this checks structure, not configuration.
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: ci
+          APP_DOMAIN: example.test
+          ADMIN_DOMAIN: admin.example.test
+          FRONTEND_URL: http://example.test
+          ADMIN_URL: http://admin.example.test
+          GRAFANA_ROOT_URL: http://admin.example.test/grafana
+          GRAFANA_ADMIN_USER: ci
+          GRAFANA_ADMIN_PASSWORD: ci
+          NGINX_BASIC_AUTH_USER: ci
+          NGINX_BASIC_AUTH_PASSWORD: ci
+          JWT_SECRET: ci-secret
+          ADMIN_EMAIL: ci@example.test
+          ADMIN_USERNAME: ci
+          ADMIN_PASSWORD: ci-password
+          TUNNEL_TOKEN: ci
+          IMAGE_NAMESPACE: ci/bestchain
+        run: |
+          docker compose -f docker-compose.yml config --quiet
+          docker compose -f docker-compose.prod.yml config --quiet
+
+      - name: Check Prometheus config and rules
+        run: |
+          docker run --rm -v "$PWD/monitoring/prometheus:/cfg" \
+            --entrypoint promtool prom/prometheus:v2.55.1 \
+            check rules /cfg/rules/postgres.yml /cfg/rules/service.yml
+
+      - name: Check nginx config renders and parses
+        env:
+          APP_DOMAIN: example.test
+          ADMIN_DOMAIN: admin.example.test
+          UPSTREAM_BACKEND: backend:3000
+          UPSTREAM_FRONTEND: frontend:5173
+          UPSTREAM_ADMIN: admin:5174
+          UPSTREAM_GRAFANA: grafana:3000
+          UPSTREAM_BACKREST: backrest:9898
+          UPSTREAM_PROMETHEUS: prometheus:9090
+          NGINX_BASIC_AUTH_USER: ci
+          NGINX_BASIC_AUTH_PASSWORD: ci
+        run: |
+          docker build -f infra/nginx/Dockerfile --target dev -t bestchain-nginx-ci .
+          docker run --rm \
+            -e APP_DOMAIN -e ADMIN_DOMAIN -e NGINX_BASIC_AUTH_USER -e NGINX_BASIC_AUTH_PASSWORD \
+            -e UPSTREAM_BACKEND -e UPSTREAM_FRONTEND -e UPSTREAM_ADMIN \
+            -e UPSTREAM_GRAFANA -e UPSTREAM_BACKREST -e UPSTREAM_PROMETHEUS \
+            bestchain-nginx-ci nginx -t
